@@ -69,6 +69,8 @@ function super_publisher_remove_categoria($request)
 
 function super_publisher_importa_categoria()
 {
+    $default_cat_id = get_option('default_category');
+
     $categorias = get_categories([
         'hide_empty' => false,
     ]);
@@ -81,6 +83,7 @@ function super_publisher_importa_categoria()
             'nome' => $categoria->name,
             'slug' => $categoria->slug,
             'descricao' => $categoria->description,
+            'is_default' => ($categoria->term_id == $default_cat_id),
         ];
     }
 
