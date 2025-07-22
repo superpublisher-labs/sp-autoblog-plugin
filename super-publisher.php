@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Super Publisher
  * Description: Conecte seu site WordPress ao Super Publisher para automatizar a criação e publicação de conteúdos.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: Super Publisher
  * Author URI: https://sp-autoblog.test/
  * License: GPL2
@@ -12,10 +12,25 @@
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
  */
 
-
 if (! defined('ABSPATH')) {
 	exit;
 }
+
+if (! file_exists(__DIR__ . '/vendor/autoload.php')) {
+	return;
+}
+
+require 'vendor/autoload.php';
+
+use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
+
+$UpdateChecker = PucFactory::buildUpdateChecker(
+	'https://github.com/superpublisher-labs/sp-autoblog-plugin',
+	__FILE__,
+	'super-publisher'
+);
+
+$UpdateChecker->setBranch('main');
 
 define('SUPER_PUBLISHER_PLUGIN_DIR', plugin_dir_path(__FILE__));
 
@@ -45,6 +60,14 @@ register_deactivation_hook(__FILE__, 'super_publisher_desativar_plugin');
 require_once SUPER_PUBLISHER_PLUGIN_DIR . 'includes/sp-admin-page.php';
 require_once SUPER_PUBLISHER_PLUGIN_DIR . 'includes/sp-webhook.php';
 
+function super_publisher_api_permission_check(WP_REST_Request $request)
+{
+	$auth_header = $request->get_header('Authorization');
+	$token = get_option('super_publisher_token', '');
+
+	return ! empty($token) && ! is_null($auth_header) && $auth_header === 'Bearer ' . $token;
+}
+
 add_action('rest_api_init', function () {
 
 	/*
@@ -65,10 +88,7 @@ add_action('rest_api_init', function () {
 		[
 			'methods'  => 'GET',
 			'callback' => 'super_publisher_handle_webhook',
-			'permission_callback' => function ($request) {
-				$headers = getallheaders();
-				return isset($headers['Authorization']) && $headers['Authorization'] === 'Bearer ' . get_option('super_publisher_token', '');
-			},
+			'permission_callback' => 'super_publisher_api_permission_check',
 		]
 	);
 
@@ -103,10 +123,7 @@ add_action('rest_api_init', function () {
 		[
 			'methods'  => 'POST',
 			'callback' => 'super_publisher_criar_categoria',
-			'permission_callback' => function ($request) {
-				$headers = getallheaders();
-				return isset($headers['Authorization']) && $headers['Authorization'] === 'Bearer ' . get_option('super_publisher_token', '');
-			},
+			'permission_callback' => 'super_publisher_api_permission_check',
 		]
 	);
 
@@ -128,10 +145,7 @@ add_action('rest_api_init', function () {
 		[
 			'methods'  => 'DELETE',
 			'callback' => 'super_publisher_remove_categoria',
-			'permission_callback' => function ($request) {
-				$headers = getallheaders();
-				return isset($headers['Authorization']) && $headers['Authorization'] === 'Bearer ' . get_option('super_publisher_token', '');
-			},
+			'permission_callback' => 'super_publisher_api_permission_check',
 		]
 	);
 
@@ -165,10 +179,7 @@ add_action('rest_api_init', function () {
 		[
 			'methods'  => 'GET',
 			'callback' => 'super_publisher_importa_categoria',
-			'permission_callback' => function ($request) {
-				$headers = getallheaders();
-				return isset($headers['Authorization']) && $headers['Authorization'] === 'Bearer ' . get_option('super_publisher_token', '');
-			},
+			'permission_callback' => 'super_publisher_api_permission_check',
 		]
 	);
 
@@ -190,10 +201,7 @@ add_action('rest_api_init', function () {
 		[
 			'methods'  => 'GET',
 			'callback' => 'super_publisher_verifica_categoria',
-			'permission_callback' => function ($request) {
-				$headers = getallheaders();
-				return isset($headers['Authorization']) && $headers['Authorization'] === 'Bearer ' . get_option('super_publisher_token', '');
-			},
+			'permission_callback' => 'super_publisher_api_permission_check',
 		]
 	);
 
@@ -232,10 +240,7 @@ add_action('rest_api_init', function () {
 		[
 			'methods'  => 'POST',
 			'callback' => 'super_publisher_criar_editar_post',
-			'permission_callback' => function ($request) {
-				$headers = getallheaders();
-				return isset($headers['Authorization']) && $headers['Authorization'] === 'Bearer ' . get_option('super_publisher_token', '');
-			},
+			'permission_callback' => 'super_publisher_api_permission_check',
 		]
 	);
 
@@ -257,10 +262,7 @@ add_action('rest_api_init', function () {
 		[
 			'methods' => 'POST',
 			'callback' => 'super_publisher_unpublish_post',
-			'permission_callback' => function ($request) {
-				$headers = getallheaders();
-				return isset($headers['Authorization']) && $headers['Authorization'] === 'Bearer ' . get_option('super_publisher_token', '');
-			},
+			'permission_callback' => 'super_publisher_api_permission_check',
 		]
 	);
 
@@ -282,10 +284,7 @@ add_action('rest_api_init', function () {
 		[
 			'methods' => 'DELETE',
 			'callback' => 'super_publisher_remove_post',
-			'permission_callback' => function ($request) {
-				$headers = getallheaders();
-				return isset($headers['Authorization']) && $headers['Authorization'] === 'Bearer ' . get_option('super_publisher_token', '');
-			},
+			'permission_callback' => 'super_publisher_api_permission_check',
 		]
 	);
 
@@ -307,10 +306,7 @@ add_action('rest_api_init', function () {
 		[
 			'methods'  => 'GET',
 			'callback' => 'super_publisher_verifica_post',
-			'permission_callback' => function ($request) {
-				$headers = getallheaders();
-				return isset($headers['Authorization']) && $headers['Authorization'] === 'Bearer ' . get_option('super_publisher_token', '');
-			},
+			'permission_callback' => 'super_publisher_api_permission_check',
 		]
 	);
 });
