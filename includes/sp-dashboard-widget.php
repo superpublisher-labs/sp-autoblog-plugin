@@ -195,11 +195,12 @@ function super_publisher_widget()
     echo '</div>';
 
     $total_itens_plugin = sp_autoblog_contar_posts_do_plugin();
-    $limite_total_plano = 1000;
+    $contagem_obj = wp_count_posts('post');
+    $total_de_posts_no_blog = $contagem_obj->publish + $contagem_obj->draft + $contagem_obj->future + $contagem_obj->pending + $contagem_obj->private;
 
     $porcentagem = 0;
-    if ($limite_total_plano > 0) {
-        $porcentagem = ($total_itens_plugin / $limite_total_plano) * 100;
+    if ($total_de_posts_no_blog > 0) {
+        $porcentagem = ($total_itens_plugin / $total_de_posts_no_blog) * 100;
     }
 
     $porcentagem_final = min($porcentagem, 100);
@@ -210,7 +211,7 @@ function super_publisher_widget()
     echo '<span class="progress-bar-text">' . round($porcentagem_final) . '%</span>';
     echo '</div>';
     echo '</div>';
-    echo '<div class="progress-label">' . esc_html($total_itens_plugin) . ' de ' . esc_html($limite_total_plano) . 'itens gerados</div>';
+    echo '<div class="progress-label">' . esc_html($total_itens_plugin) . ' de ' . esc_html($total_de_posts_no_blog) . ' itens gerados</div>';
     echo '</div>';
 
     echo '<a href="' . esc_url(admin_url('admin.php?page=super-publisher')) . '" class="config-button">Configurações</a>';
