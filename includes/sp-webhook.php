@@ -119,11 +119,19 @@ function super_publisher_criar_editar_post($request)
     $slug = sanitize_title($params['slug'] ?? '');
     $edit = boolval($params['edit'] ?? false);
     $schedule_date = sanitize_text_field($params['schedule_date'] ?? '');
+    $keywords = $params['keywords'] ?? [];
 
-    $tags_raw = $params['tags'] ?? [];
-    $tags = is_string($tags_raw) ? json_decode($tags_raw, true) : $tags_raw;
+    if (!is_array($keywords)) {
+        $decoded_keywords = json_decode($keywords, true);
+        $keywords = is_array($decoded_keywords) ? $decoded_keywords : [];
+    }
+
+    $meta_keyword = $keywords[0] ?? null;
+
+    $tags = $params['tags'] ?? [];
     if (!is_array($tags)) {
-        $tags = [];
+        $decoded_tags = json_decode($tags, true);
+        $tags = is_array($decoded_tags) ? $decoded_tags : [];
     }
 
     $meta_title = $params['meta_title'] ?? '';
@@ -188,12 +196,18 @@ function super_publisher_criar_editar_post($request)
             if (!empty($meta_description)) {
                 update_post_meta($post_id, 'rank_math_description', $meta_description);
             }
+            if (!empty($meta_keyword)) {
+                update_post_meta($post_id, 'rank_math_focus_keyword', $meta_keyword);
+            }
         } elseif (defined('WPSEO_VERSION')) {
             if (!empty($meta_title)) {
                 update_post_meta($post_id, '_yoast_wpseo_title', $meta_title);
             }
             if (!empty($meta_description)) {
                 update_post_meta($post_id, '_yoast_wpseo_metadesc', $meta_description);
+            }
+            if (!empty($meta_keyword)) {
+                update_post_meta($post_id, '_yoast_wpseo_focuskw', $meta_keyword);
             }
         } elseif (function_exists('aioseo')) {
             if (!empty($meta_title)) {
@@ -202,13 +216,18 @@ function super_publisher_criar_editar_post($request)
             if (!empty($meta_description)) {
                 update_post_meta($post_id, '_aioseo_description', $meta_description);
             }
+            if (!empty($meta_keyword)) {
+                update_post_meta($post_id, '_aioseo_focuskw', $meta_keyword);
+            }
         } else {
+            if (!empty($meta_title)) {
+                update_post_meta($post_id, '_custom_meta_title', $meta_title);
+            }
             if (!empty($meta_description)) {
-                $update_args = [
-                    'ID'           => $post_id,
-                    'post_excerpt' => $meta_description,
-                ];
-                wp_update_post($update_args);
+                update_post_meta($post_id, '_custom_meta_description', $meta_description);
+            }
+            if (!empty($meta_keyword)) {
+                update_post_meta($post_id, '_custom_meta_keyword', $meta_keyword);
             }
         }
 
@@ -299,7 +318,7 @@ function super_publisher_importa_usuario()
     foreach ($usuarios as $user) {
         $resultado[] = [
             'id' => $user->ID,
-            'nome' => $user->display_name ,
+            'nome' => $user->display_name,
             'role' => $user->roles[0] ?? 'sem cargo',
 
         ];
