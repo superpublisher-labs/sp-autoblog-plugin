@@ -33,6 +33,7 @@ $UpdateChecker = PucFactory::buildUpdateChecker(
 $UpdateChecker->setBranch('main');
 
 define('SUPER_PUBLISHER_PLUGIN_DIR', plugin_dir_path(__FILE__));
+define('SUPER_PUBLISHER_PLUGIN_FILE', __FILE__);
 
 add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'super_publisher_adicionar_link_configuracoes');
 

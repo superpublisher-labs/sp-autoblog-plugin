@@ -4,14 +4,11 @@ function super_publisher_widget()
 {
     global $UpdateChecker;
 
-    // Obter dados do plugin
-    $plugin_data = get_plugin_data(SUPER_PUBLISHER_PLUGIN_DIR . 'super-publisher.php');
+    $plugin_data = get_plugin_data(SUPER_PUBLISHER_PLUGIN_FILE);
     $current_version = $plugin_data['Version'] ?? 'N/A';
     
-    // Verificar se há configurações salvas
     $token = get_option('super_publisher_token', '');;
     
-    // Verificar atualizações
     $update_available = false;
     $latest_version = $current_version;
     $update_status_class = 'status-updated';
@@ -27,7 +24,6 @@ function super_publisher_widget()
         }
     }
 
-    // CSS inline (pode ser movido para um arquivo separado)
     echo '<style>
         .info-item {
             display: flex;
@@ -131,27 +127,23 @@ function super_publisher_widget()
         }
     </style>';
 
-    // Versão atual
     echo '<div class="info-item">';
     echo '<span class="info-label">Versão Atual:</span>';
     echo '<span class="info-value version-info">v' . esc_html($current_version) . '</span>';
     echo '</div>';
 
-    // Status de atualização
     echo '<div class="info-item">';
     echo '<span class="info-label">Status:</span>';
     echo '<span class="' . $update_status_class . '">' . $update_status_text . '</span>';
     echo '</div>';
 
-    // Notificação de atualização se disponível
     if ($update_available) {
         echo '<div class="update-notice">';
         echo '<strong>Nova versão disponível: v' . esc_html($latest_version) . '</strong><br>';
-        echo '<small>Clique em "Configurações" para mais detalhes</small>';
+        echo '<small>Atualize agora mesmo!</small>';
         echo '</div>';
     }
 
-    // Status de conexão
     echo '<div class="info-item">';
     echo '<span class="info-label">Token:</span>';
     echo '<div class="connection-status">';
@@ -160,13 +152,11 @@ function super_publisher_widget()
     echo '</div>';
     echo '</div>';
 
-    // URL configurada
     echo '<div class="info-item">';
     echo '<span class="info-label">URL:</span>';
     echo '<span class="info-value">' . get_home_url() . '</span>';
     echo '</div>';
 
-    // Botão de configurações
     echo '<a href="' . esc_url(admin_url('admin.php?page=super-publisher')) . '" class="config-button">Configurações</a>';
 }
 ?>
