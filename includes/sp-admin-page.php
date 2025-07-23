@@ -8,7 +8,7 @@ add_action('admin_menu', function () {
         'manage_options',
         'super-publisher',
         'super_publisher_admin_page',
-        'dashicons-rss',
+        'none',
         25
     );
 });
@@ -41,7 +41,7 @@ function super_publisher_admin_page()
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Mona+Sans:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet">
     <style>
-        body {
+        .mona {
             font-family: 'Mona Sans', sans-serif;
         }
 
@@ -52,7 +52,7 @@ function super_publisher_admin_page()
         }
     </style>
 
-    <div class="w-full flex flex-col justify-center items-center px-4 py-8">
+    <div class="w-full flex flex-col justify-center items-center px-4 py-8 mona">
         <div class="flex flex-row items-center mb-6 gap-2">
             <div class="relative flex items-center justify-center rounded-xl bg-blue-500 py-2 px-3"><i class="fa-solid fa-pen-nib text-white rotate-90 text-2xl"></i></div>
             <p class="text-3xl font-bold text-gray-800">Super<span class="text-blue-600">Publisher</span></p>
@@ -100,7 +100,7 @@ function super_publisher_admin_page()
 
                 <!-- AUTOR -->
                 <div class="space-y-2">
-                    <label for="autor" class="block text-sm font-medium text-gray-700">Autor</label>
+                    <label for="autor" class="block text-sm font-medium text-gray-700">Autor padrão</label>
                     <div class="relative w-full">
                         <select name="autor" id="autor"
                             class="w-full p-3 border border-gray-300 rounded-lg shadow-sm !block !box-border !text-gray-900 !bg-white !font-normal"
@@ -123,7 +123,7 @@ function super_publisher_admin_page()
                         </div>
                     </div>
                     <p class="text-xs text-gray-500">
-                        O autor dos posts que serão publicados pelo Super Publisher.
+                        Se a automação não especificar um autor para o post, este usuário será usado como padrão. Garante que nenhum post fique sem autor.
                     </p>
                 </div>
 

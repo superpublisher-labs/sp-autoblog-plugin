@@ -128,7 +128,7 @@ function super_publisher_criar_editar_post($request)
 
     $meta_keyword = $keywords[0] ?? null;
 
-    $tags = $params['tags'] ?? [];
+    $tags = $params['tags'] ?? $params['keywords'] ?? [];
     if (!is_array($tags)) {
         $decoded_tags = json_decode($tags, true);
         $tags = is_array($decoded_tags) ? $decoded_tags : [];

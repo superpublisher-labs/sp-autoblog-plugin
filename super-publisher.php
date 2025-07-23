@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Super Publisher
  * Description: Conecte seu site WordPress ao Super Publisher para automatizar a criação e publicação de conteúdos.
- * Version: 1.1.1
+ * Version: 1.2.0
  * Author: Super Publisher
  * Author URI: https://sp-autoblog.test/
  * License: GPL2
@@ -59,6 +59,57 @@ register_deactivation_hook(__FILE__, 'super_publisher_desativar_plugin');
 
 require_once SUPER_PUBLISHER_PLUGIN_DIR . 'includes/sp-admin-page.php';
 require_once SUPER_PUBLISHER_PLUGIN_DIR . 'includes/sp-webhook.php';
+require_once SUPER_PUBLISHER_PLUGIN_DIR . 'includes/sp-dashboard-widget.php';
+
+function super_publisher_registrar_dashboard_widget()
+{
+	wp_add_dashboard_widget(
+		'super_publisher_dashboard_widget',
+		'Super Publisher - Autoblog',
+		'super_publisher_widget'
+	);
+}
+add_action('wp_dashboard_setup', 'super_publisher_registrar_dashboard_widget');
+
+function super_publisher_admin_styles()
+{
+	// Prepara a string do SVG em base64
+	$svg_icon_raw = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 640'><g transform='rotate(90, 320, 320)'><path fill='black' d='M432.5 82.3L382.4 132.4L507.7 257.7L557.8 207.6C579.7 185.7 579.7 150.3 557.8 128.4L511.7 82.3C489.8 60.4 454.4 60.4 432.5 82.3zM343.3 161.2L342.8 161.3L198.7 204.5C178.8 210.5 163 225.7 156.4 245.5L67.8 509.8C64.9 518.5 65.9 528 70.3 535.8L225.7 380.4C224.6 376.4 224.1 372.3 224.1 368C224.1 341.5 245.6 320 272.1 320C298.6 320 320.1 341.5 320.1 368C320.1 394.5 298.6 416 272.1 416C267.8 416 263.6 415.4 259.7 414.4L104.3 569.7C112.1 574.1 121.5 575.1 130.3 572.2L394.6 483.6C414.3 477 429.6 461.2 435.6 441.3L478.8 297.2L478.9 296.7L343.4 161.2z'/></g></svg>";
+	$icon_data_uri = 'data:image/svg+xml;base64,' . base64_encode($svg_icon_raw);
+
+	// Cria o CSS que vamos injetar
+	$custom_css = "
+        #toplevel_page_super-publisher .wp-menu-image {
+			-webkit-mask-image: url(\"{$icon_data_uri}\");
+			mask-image: url(\"{$icon_data_uri}\");
+
+			-webkit-mask-size: 20px;
+			mask-size: 20px;
+
+			-webkit-mask-repeat: no-repeat;
+			mask-repeat: no-repeat;
+			
+			-webkit-mask-position: center;
+			mask-position: center;
+
+			background-color: #a7aaad; 
+		}
+
+		#toplevel_page_super-publisher:hover .wp-menu-image {
+			background-color: #72aee6;
+		}
+
+		#toplevel_page_super-publisher.wp-has-current-submenu .wp-menu-image,
+		#toplevel_page_super-publisher.current .wp-menu-image {
+			background-color: #f0f0f1;
+		}
+    ";
+
+	wp_add_inline_style('wp-admin', $custom_css);
+}
+
+// O hook 'admin_enqueue_scripts' é o lugar certo para adicionar estilos no admin
+add_action('admin_enqueue_scripts', 'super_publisher_admin_styles');
 
 function super_publisher_api_permission_check(WP_REST_Request $request)
 {
