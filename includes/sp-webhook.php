@@ -185,6 +185,8 @@ function super_publisher_criar_editar_post($request)
     $post_id = $edit ? wp_update_post($post) : wp_insert_post($post);
 
     if (!is_wp_error($post_id)) {
+        update_post_meta($post_id, '_super_publisher_post', true);
+
         if (!empty($tags) && is_array($tags)) {
             wp_set_post_tags($post_id, $tags, true);
         }
@@ -445,4 +447,16 @@ function setar_thumbnail_com_alt($url, $post_id, $alt = '')
     if ($anexo_id) {
         set_post_thumbnail($post_id, $anexo_id);
     }
+}
+
+function super_publisher_force_editor_choice($use_block_editor, $post) {
+    $is_super_publisher_post = get_post_meta($post->ID, '_super_publisher_post', true);
+
+    if (!$is_super_publisher_post) {
+        return $use_block_editor;
+    }
+
+    $author_id = $post->post_author;
+    $author_prefers_classic = get_user_meta($author_id, 'wp_disable_block_editor', true);
+    return !$author_prefers_classic; 
 }

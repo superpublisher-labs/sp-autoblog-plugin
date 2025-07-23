@@ -6,14 +6,14 @@ function super_publisher_widget()
 
     $plugin_data = get_plugin_data(SUPER_PUBLISHER_PLUGIN_FILE);
     $current_version = $plugin_data['Version'] ?? 'N/A';
-    
-    $token = get_option('super_publisher_token', '');;
-    
+
+    $token = get_option('super_publisher_token', '');
+
     $update_available = false;
     $latest_version = $current_version;
     $update_status_class = 'status-updated';
     $update_status_text = '✅ Atualizado';
-    
+
     if (isset($UpdateChecker) && is_object($UpdateChecker)) {
         $update_info = $UpdateChecker->getUpdate();
         if ($update_info !== null) {
@@ -125,6 +125,43 @@ function super_publisher_widget()
             padding: 2px 6px;
             border-radius: 3px;
         }
+
+        .progress-container {
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 24px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid #ddd;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #2271b1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: width 0.5s ease-in-out;
+        }
+
+        .progress-bar-text {
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .progress-label {
+            text-align: center;
+            font-size: 12px;
+            color: #646970;
+            margin-top: 5px;
+        }
     </style>';
 
     echo '<div class="info-item">';
@@ -157,6 +194,43 @@ function super_publisher_widget()
     echo '<span class="info-value">' . get_home_url() . '</span>';
     echo '</div>';
 
+    $total_itens_plugin = sp_autoblog_contar_posts_do_plugin();
+    $limite_total_plano = 1000;
+
+    $porcentagem = 0;
+    if ($limite_total_plano > 0) {
+        $porcentagem = ($total_itens_plugin / $limite_total_plano) * 100;
+    }
+
+    $porcentagem_final = min($porcentagem, 100);
+
+    echo '<div class="progress-container">';
+    echo '<div class="progress-bar">';
+    echo '<div class="progress-bar-fill" style="width: ' . esc_attr($porcentagem_final) . '%;">';
+    echo '<span class="progress-bar-text">' . round($porcentagem_final) . '%</span>';
+    echo '</div>';
+    echo '</div>';
+    echo '<div class="progress-label">' . esc_html($total_itens_plugin) . ' de ' . esc_html($limite_total_plano) . 'itens gerados</div>';
+    echo '</div>';
+
     echo '<a href="' . esc_url(admin_url('admin.php?page=super-publisher')) . '" class="config-button">Configurações</a>';
 }
-?>
+
+function sp_autoblog_contar_posts_do_plugin()
+{
+    $args = [
+        'post_type'      => 'any',
+        'post_status'    => 'any',
+        'posts_per_page' => 1,
+        'meta_query'     => [
+            [
+                'key'     => '_super_publisher_post',
+                'compare' => 'EXISTS',
+            ],
+        ],
+    ];
+
+    $query = new WP_Query($args);
+
+    return $query->found_posts;
+}
