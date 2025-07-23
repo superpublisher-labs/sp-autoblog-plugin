@@ -2,7 +2,13 @@
 
 function super_publisher_handle_webhook()
 {
-    return new WP_REST_Response(['message' => 'Webhook conectado!'], 200);
+    $plugin_data = get_plugin_data(SUPER_PUBLISHER_PLUGIN_FILE);
+    $current_version = $plugin_data['Version'] ?? 'N/A';
+
+    return new WP_REST_Response([
+        'message' => 'Webhook conectado!',
+        'version' => $current_version,
+    ], 200);
 }
 
 //CATEGORIAS

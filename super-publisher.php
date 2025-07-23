@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Super Publisher
  * Description: Conecte seu site WordPress ao Super Publisher para automatizar a criação e publicação de conteúdos.
- * Version: 1.2.3
+ * Version: 1.2.4
  * Author: Super Publisher
  * Author URI: https://sp-autoblog.test/
  * License: GPL2
