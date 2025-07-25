@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Super Publisher
  * Description: Conecte seu site WordPress ao Super Publisher para automatizar a criação e publicação de conteúdos.
- * Version: 1.2.4.1
+ * Version: 2.0.0
  * Author: Super Publisher
  * Author URI: https://sp-autoblog.test/
  * License: GPL2
@@ -53,7 +53,7 @@ function super_publisher_ativar_plugin()
 function super_publisher_desativar_plugin()
 {
 	delete_option('super_publisher_token');
-	delete_option('super_publisher_autor');
+	delete_option('default_author');
 }
 
 register_activation_hook(__FILE__, 'super_publisher_ativar_plugin');
@@ -110,7 +110,6 @@ function super_publisher_admin_styles()
 	wp_add_inline_style('wp-admin', $custom_css);
 }
 
-// O hook 'admin_enqueue_scripts' é o lugar certo para adicionar estilos no admin
 add_action('admin_enqueue_scripts', 'super_publisher_admin_styles');
 
 function super_publisher_api_permission_check(WP_REST_Request $request)
@@ -175,7 +174,7 @@ add_action('rest_api_init', function () {
 		'/categoria',
 		[
 			'methods'  => 'POST',
-			'callback' => 'super_publisher_criar_categoria',
+			'callback' => 'super_publisher_category_create',
 			'permission_callback' => 'super_publisher_api_permission_check',
 		]
 	);
@@ -197,7 +196,7 @@ add_action('rest_api_init', function () {
 		'/categoria/(?P<id>\d+)',
 		[
 			'methods'  => 'DELETE',
-			'callback' => 'super_publisher_remove_categoria',
+			'callback' => 'super_publisher_category_destroy',
 			'permission_callback' => 'super_publisher_api_permission_check',
 		]
 	);
@@ -231,7 +230,7 @@ add_action('rest_api_init', function () {
 		'/categorias',
 		[
 			'methods'  => 'GET',
-			'callback' => 'super_publisher_importa_categoria',
+			'callback' => 'super_publisher_category_export',
 			'permission_callback' => 'super_publisher_api_permission_check',
 		]
 	);
@@ -253,7 +252,7 @@ add_action('rest_api_init', function () {
 		'/categoria/(?P<id>\d+)',
 		[
 			'methods'  => 'GET',
-			'callback' => 'super_publisher_verifica_categoria',
+			'callback' => 'super_publisher_category_check',
 			'permission_callback' => 'super_publisher_api_permission_check',
 		]
 	);
@@ -292,7 +291,7 @@ add_action('rest_api_init', function () {
 		'/post',
 		[
 			'methods'  => 'POST',
-			'callback' => 'super_publisher_criar_editar_post',
+			'callback' => 'super_publisher_post_create_edit',
 			'permission_callback' => 'super_publisher_api_permission_check',
 		]
 	);
@@ -314,7 +313,7 @@ add_action('rest_api_init', function () {
 		'/post/(?P<id>\d+)/unpublish',
 		[
 			'methods' => 'POST',
-			'callback' => 'super_publisher_unpublish_post',
+			'callback' => 'super_publisher_post_unpublish',
 			'permission_callback' => 'super_publisher_api_permission_check',
 		]
 	);
@@ -336,7 +335,7 @@ add_action('rest_api_init', function () {
 		'/post/(?P<id>\d+)',
 		[
 			'methods' => 'DELETE',
-			'callback' => 'super_publisher_remove_post',
+			'callback' => 'super_publisher_post_destroy',
 			'permission_callback' => 'super_publisher_api_permission_check',
 		]
 	);
@@ -358,7 +357,36 @@ add_action('rest_api_init', function () {
 		'/post/(?P<id>\d+)',
 		[
 			'methods'  => 'GET',
-			'callback' => 'super_publisher_verifica_post',
+			'callback' => 'super_publisher_post_check',
+			'permission_callback' => 'super_publisher_api_permission_check',
+		]
+	);
+
+	//USERS
+
+	/*
+	 * Rota para importação de usuários
+	 * 
+	 * Method: GET
+	 * Url: <url do blog>/wp-json/super-publisher/v1/users
+	 * Header: Authorization: Bearer <token>
+	 * Body: empty
+	 * Return:
+	 * 'usuarios': [
+	 * 	{
+	 * 		'id': 1,
+	 * 		'nome': 'Carlos',
+	 * 		'role': 'admin',
+	 * 	},
+	 * 	...
+	 * ]
+	 */
+	register_rest_route(
+		'super-publisher/v1',
+		'/users',
+		[
+			'methods'  => 'GET',
+			'callback' => 'super_publisher_user_export',
 			'permission_callback' => 'super_publisher_api_permission_check',
 		]
 	);

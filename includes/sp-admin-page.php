@@ -24,17 +24,17 @@ function super_publisher_admin_page()
 {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $token = sanitize_text_field($_POST['token'] ?? '');
-        $autor = sanitize_text_field($_POST['autor'] ?? '');
+        $author = sanitize_text_field($_POST['author'] ?? '');
 
         update_option('super_publisher_token', $token);
-        update_option('super_publisher_autor', $autor);
+        update_option('default_author', $author);
 
         $success = true;
     }
 
     // Pega os valores salvos
     $token = get_option('super_publisher_token', '');
-    $autor = get_option('super_publisher_autor', '');
+    $author = get_option('default_author', '');
 ?>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
