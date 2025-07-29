@@ -113,7 +113,7 @@ function super_publisher_post_create_edit($request)
 
     $title = sanitize_text_field($params['title'] ?? '');
     $content = wp_kses_post($params['content'] ?? '');
-    $category = sanitize_text_field($params['category'] ?? '');
+    $category_id = sanitize_text_field($params['category'] ?? '');
     $user = sanitize_text_field($params['user'] ?? '');
     $status = sanitize_text_field($params['status'] ?? 'publish');
     $slug = sanitize_title($params['slug'] ?? '');
@@ -147,11 +147,17 @@ function super_publisher_post_create_edit($request)
         return new WP_REST_Response(['error' => 'content is required'], 400);
     }
 
+    $category_array = [];
+
+    if ($category_id > 0) {
+        $category_array[] = $category_id;
+    }
+
     $post = [
         'post_title'    => $title,
         'post_content'  => $content,
         'post_status'   => $status,
-        'post_category' => $category,
+        'post_category' => $category_array,
         'post_type'     => 'post',
         'post_name'     => $slug,
         'post_author'   => intval($user) ?? intval(get_option('default_author', 0)),
@@ -434,7 +440,8 @@ function setar_thumbnail_com_alt($url, $post_id, $alt = '')
     }
 }
 
-function super_publisher_force_editor_choice($use_block_editor, $post) {
+function super_publisher_force_editor_choice($use_block_editor, $post)
+{
     $is_super_publisher_post = get_post_meta($post->ID, '_super_publisher_post', true);
 
     if (!$is_super_publisher_post) {
@@ -443,5 +450,5 @@ function super_publisher_force_editor_choice($use_block_editor, $post) {
 
     $author_id = $post->post_author;
     $author_prefers_classic = get_user_meta($author_id, 'wp_disable_block_editor', true);
-    return !$author_prefers_classic; 
+    return !$author_prefers_classic;
 }
