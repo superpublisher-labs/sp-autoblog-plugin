@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Super Publisher
  * Description: Conecte seu site WordPress ao Super Publisher para automatizar a criação e publicação de conteúdos.
- * Version: 2.1.0
+ * Version: 2.2.0
  * Author: Super Publisher
  * Author URI: https://autoblog.superpublisher.net/
  * License: GPL2
@@ -117,7 +117,21 @@ function super_publisher_api_permission_check(WP_REST_Request $request)
 	$auth_header = $request->get_header('Authorization');
 	$token = get_option('super_publisher_token', '');
 
-	return ! empty($token) && ! is_null($auth_header) && $auth_header === 'Bearer ' . $token;
+	$allowed_ips = [
+		'167.99.114.182'
+	];
+
+	$remote_ip = $_SERVER['REMOTE_ADDR'] ?? '';
+
+	if (!in_array($remote_ip, $allowed_ips, true)) {
+		return false;
+	}
+
+	if (empty($token) || is_null($auth_header) || $auth_header !== 'Bearer ' . $token) {
+		return false;
+	}
+
+	return true;
 }
 
 add_action('rest_api_init', function () {

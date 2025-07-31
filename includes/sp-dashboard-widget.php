@@ -211,7 +211,7 @@ function super_publisher_widget()
     echo '<span class="progress-bar-text">' . round($porcentagem_final) . '%</span>';
     echo '</div>';
     echo '</div>';
-    echo '<div class="progress-label">' . esc_html($total_itens_plugin) . ' de ' . esc_html($total_de_posts_no_blog) . ' itens gerados</div>';
+    echo '<div class="progress-label">' . esc_html($total_itens_plugin) . ' de ' . esc_html($total_de_posts_no_blog) . ' posts automatizados</div>';
     echo '</div>';
 
     echo '<a href="' . esc_url(admin_url('admin.php?page=super-publisher')) . '" class="config-button">Configurações</a>';
