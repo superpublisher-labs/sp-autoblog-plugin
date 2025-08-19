@@ -113,7 +113,7 @@ function super_publisher_post_create_edit($request)
 
     $title = sanitize_text_field($params['title'] ?? '');
     $content = wp_kses_post($params['content'] ?? '');
-    $category_id = sanitize_text_field($params['category'] ?? '');
+    $category_id = intval($params['category'] ?? 0);
     $user = sanitize_text_field($params['user'] ?? '');
     $status = sanitize_text_field($params['status'] ?? 'publish');
     $slug = sanitize_title($params['slug'] ?? '');
@@ -157,7 +157,6 @@ function super_publisher_post_create_edit($request)
         'post_title'    => $title,
         'post_content'  => $content,
         'post_status'   => $status,
-        'post_category' => $category_array,
         'post_type'     => 'post',
         'post_name'     => $slug,
         'post_author'   => intval($user) ?? intval(get_option('default_author', 0)),
@@ -181,6 +180,10 @@ function super_publisher_post_create_edit($request)
     $post_id = $edit ? wp_update_post($post) : wp_insert_post($post);
 
     if (!is_wp_error($post_id)) {
+        if (!empty($category_array)) {
+            wp_set_post_categories($post_id, $category_array);
+        }
+
         update_post_meta($post_id, '_super_publisher_post', true);
 
         if (!empty($tags) && is_array($tags)) {
