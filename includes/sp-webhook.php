@@ -171,6 +171,10 @@ function super_publisher_post_create_edit($request)
         $post['post_date'] = $dt->format('Y-m-d H:i:s');
         $post['post_date_gmt'] = $dt_utc->format('Y-m-d H:i:s');
         $post['post_status'] = 'future';
+    } else {
+        $post['post_status'] = 'publish';
+        $post['post_date'] = current_time('mysql');
+        $post['post_date_gmt'] = current_time('mysql', 1);
     }
 
     if ($edit && !empty($params['id'])) {
