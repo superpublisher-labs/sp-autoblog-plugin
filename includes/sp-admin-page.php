@@ -23,13 +23,15 @@ add_action('admin_enqueue_scripts', 'super_publisher_enqueue_font_awesome');
 function super_publisher_admin_page()
 {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $token = sanitize_text_field($_POST['token'] ?? '');
+        $token  = sanitize_text_field($_POST['token'] ?? '');
         $author = sanitize_text_field($_POST['author'] ?? '');
 
         update_option('super_publisher_token', $token);
         update_option('default_author', $author);
 
         $success = true;
+    } else {
+        $success = false;
     }
 
     // Pega os valores salvos
@@ -100,21 +102,25 @@ function super_publisher_admin_page()
 
                 <!-- AUTOR -->
                 <div class="space-y-2">
-                    <label for="autor" class="block text-sm font-medium text-gray-700">Autor padrão</label>
+                    <label for="author" class="block text-sm font-medium text-gray-700">Autor padrão</label>
                     <div class="relative w-full">
-                        <select name="autor" id="autor"
+                        <select name="author" id="author"
                             class="w-full p-3 border border-gray-300 rounded-lg shadow-sm !block !box-border !text-gray-900 !bg-white !font-normal"
                             style="display: block !important; box-sizing: border-box !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
                             <option value="">Nenhum</option>
                             <?php
-                            $authors = get_users();
-                            foreach ($authors as $author) {
-                                $selected = (isset($autor) && $autor == $author->ID) ? 'selected' : '';
+                                $authors = get_users();
+                                $selected_author = get_option('default_author', '');
+
+                                foreach ($authors as $user) {
+                                    $selected = ($selected_author == $user->ID) ? 'selected' : '';
+                                    ?>
+                                    <option value="<?php echo esc_attr($user->ID); ?>" <?php echo $selected; ?>>
+                                        <?php echo esc_html($user->display_name); ?>
+                                    </option>
+                                    <?php
+                                }
                             ?>
-                                <option value="<?php echo esc_attr($author->ID); ?>" <?php echo $selected; ?>>
-                                    <?php echo esc_html($author->display_name); ?>
-                                </option>
-                            <?php } ?>
                         </select>
                         <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
                             <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
