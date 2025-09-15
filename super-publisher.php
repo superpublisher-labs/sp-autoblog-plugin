@@ -1,9 +1,25 @@
 <?php
 
+use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
+
+if (!class_exists(PucFactory::class) && file_exists(__DIR__ . '/vendor/autoload.php')) {
+	require_once __DIR__ . '/vendor/autoload.php';
+}
+
+if (class_exists(PucFactory::class)) {
+	$UpdateChecker = PucFactory::buildUpdateChecker(
+		'https://github.com/superpublisher-labs/sp-autoblog-plugin',
+		__FILE__,
+		'super-publisher'
+	);
+
+	$UpdateChecker->setBranch('main');
+}
+
 /**
  * Plugin Name: Super Publisher
  * Description: Conecte seu site WordPress ao Super Publisher para automatizar a criação e publicação de conteúdos.
- * Version: 2.2.5
+ * Version: 2.2.6
  * Author: Super Publisher
  * Author URI: https://autoblog.superpublisher.net/
  * License: GPL2
@@ -15,24 +31,6 @@
 if (! defined('ABSPATH')) {
 	exit;
 }
-
-if (! file_exists(__DIR__ . '/vendor/autoload.php')) {
-	return;
-}
-
-if (file_exists(__DIR__ . '/vendor/autoload.php')) {
-    require_once __DIR__ . '/vendor/autoload.php';
-}
-
-use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
-
-$UpdateChecker = PucFactory::buildUpdateChecker(
-	'https://github.com/superpublisher-labs/sp-autoblog-plugin',
-	__FILE__,
-	'super-publisher'
-);
-
-$UpdateChecker->setBranch('main');
 
 define('SUPER_PUBLISHER_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('SUPER_PUBLISHER_PLUGIN_FILE', __FILE__);
