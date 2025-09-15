@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Super Publisher
  * Description: Conecte seu site WordPress ao Super Publisher para automatizar a criação e publicação de conteúdos.
- * Version: 2.2.4
+ * Version: 2.2.5
  * Author: Super Publisher
  * Author URI: https://autoblog.superpublisher.net/
  * License: GPL2
@@ -20,7 +20,9 @@ if (! file_exists(__DIR__ . '/vendor/autoload.php')) {
 	return;
 }
 
-require 'vendor/autoload.php';
+if (file_exists(__DIR__ . '/vendor/autoload.php')) {
+    require_once __DIR__ . '/vendor/autoload.php';
+}
 
 use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
 
