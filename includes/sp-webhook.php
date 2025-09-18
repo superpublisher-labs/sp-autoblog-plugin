@@ -18,14 +18,6 @@ function super_publisher_handle_webhook()
 //CATEGORIAS
 function super_publisher_category_create($request)
 {
-    if (!current_user_can('manage_categories')) {
-        return new WP_Error(
-            'rest_forbidden',
-            'Você não tem permissão para criar categorias.',
-            ['status' => 403]
-        );
-    }
-
     $params = $request->get_json_params();
 
     $name = sanitize_text_field($params['name'] ?? '');
@@ -55,14 +47,6 @@ function super_publisher_category_create($request)
 
 function super_publisher_category_destroy($request)
 {
-    if (!current_user_can('manage_categories')) {
-        return new WP_Error(
-            'rest_forbidden',
-            'Você não tem permissão para deletar categorias.',
-            ['status' => 403]
-        );
-    }
-
     $id = intval($request->get_param('id'));
 
     if ($id <= 0) {
@@ -86,10 +70,6 @@ function super_publisher_category_destroy($request)
 
 function super_publisher_category_export()
 {
-    if (!current_user_can('edit_posts')) {
-        return new WP_Error('rest_forbidden', 'Permissão insuficiente.', ['status' => 403]);
-    }
-
     $default_cat_id = get_option('default_category');
 
     $categorias = get_categories([
@@ -112,11 +92,7 @@ function super_publisher_category_export()
 }
 
 function super_publisher_category_check($request)
-{
-    if (!current_user_can('edit_posts')) {
-        return new WP_Error('rest_forbidden', 'Permissão insuficiente.', ['status' => 403]);
-    }
-    
+{    
     $category_id = $request->get_param('id');
 
     if (empty($category_id) || !is_numeric($category_id) || $category_id <= 0) {
@@ -310,7 +286,6 @@ function super_publisher_post_unpublish($request)
     $is_sp_post = get_post_meta($post_id, '_super_publisher_post', true);
 
     if (!$is_sp_post) {
-
         return new WP_REST_Response(['error' => 'Permission denied: this post was not created by Super Publisher.'], 403);
     }
 
