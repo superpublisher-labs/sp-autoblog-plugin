@@ -1,5 +1,9 @@
 <?php
 
+if (! defined('ABSPATH')) {
+    exit;
+}
+
 function super_publisher_widget()
 {
     global $UpdateChecker;

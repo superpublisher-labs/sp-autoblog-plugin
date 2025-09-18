@@ -1,5 +1,9 @@
 <?php
 
+if (! defined('ABSPATH')) {
+    exit;
+}
+
 function super_publisher_handle_webhook()
 {
     $plugin_data = get_plugin_data(SUPER_PUBLISHER_PLUGIN_FILE);
@@ -14,6 +18,14 @@ function super_publisher_handle_webhook()
 //CATEGORIAS
 function super_publisher_category_create($request)
 {
+    if (!current_user_can('manage_categories')) {
+        return new WP_Error(
+            'rest_forbidden',
+            'Você não tem permissão para criar categorias.',
+            ['status' => 403]
+        );
+    }
+
     $params = $request->get_json_params();
 
     $name = sanitize_text_field($params['name'] ?? '');
@@ -31,20 +43,26 @@ function super_publisher_category_create($request)
 
     $result = wp_insert_term($name, 'category', [
         'description' => '',
-        'slug' => $slug,
+        'slug'        => $slug,
     ]);
 
     if (is_wp_error($result)) {
         return new WP_REST_Response(['error' => $result->get_error_message()], 500);
     }
 
-    $category = get_term($result['term_id'], 'category');
-
-    return new WP_REST_Response(['id' => $category->term_id], 201);
+    return new WP_REST_Response(['id' => $result['term_id']], 201);
 }
 
 function super_publisher_category_destroy($request)
 {
+    if (!current_user_can('manage_categories')) {
+        return new WP_Error(
+            'rest_forbidden',
+            'Você não tem permissão para deletar categorias.',
+            ['status' => 403]
+        );
+    }
+
     $id = intval($request->get_param('id'));
 
     if ($id <= 0) {
@@ -57,9 +75,9 @@ function super_publisher_category_destroy($request)
         return new WP_REST_Response(['error' => 'category not found'], 404);
     }
 
-    $result = wp_delete_term($categoria->term_id, 'category');
+    $result = wp_delete_term($id, 'category');
 
-    if (is_wp_error($result)) {
+    if (is_wp_error($result) || !$result) {
         return new WP_REST_Response(['error' => 'unable to delete category'], 500);
     }
 
@@ -68,6 +86,10 @@ function super_publisher_category_destroy($request)
 
 function super_publisher_category_export()
 {
+    if (!current_user_can('edit_posts')) {
+        return new WP_Error('rest_forbidden', 'Permissão insuficiente.', ['status' => 403]);
+    }
+
     $default_cat_id = get_option('default_category');
 
     $categorias = get_categories([
@@ -91,6 +113,10 @@ function super_publisher_category_export()
 
 function super_publisher_category_check($request)
 {
+    if (!current_user_can('edit_posts')) {
+        return new WP_Error('rest_forbidden', 'Permissão insuficiente.', ['status' => 403]);
+    }
+    
     $category_id = $request->get_param('id');
 
     if (empty($category_id) || !is_numeric($category_id) || $category_id <= 0) {
@@ -115,7 +141,9 @@ function super_publisher_post_create_edit($request)
     $content = wp_kses_post($params['content'] ?? '');
     $category_id = intval($params['category'] ?? 0);
     $user = sanitize_text_field($params['user'] ?? '');
-    $status = sanitize_text_field($params['status'] ?? 'publish');
+    $allowed_statuses = ['publish', 'future', 'draft', 'pending', 'private'];
+    $raw_status = $params['status'] ?? 'publish';
+    $status = in_array($raw_status, $allowed_statuses) ? $raw_status : 'publish';
     $slug = sanitize_title($params['slug'] ?? '');
     $edit = boolval($params['edit'] ?? false);
     $schedule_date = sanitize_text_field($params['schedule_date'] ?? '');
@@ -126,7 +154,7 @@ function super_publisher_post_create_edit($request)
         $keywords = is_array($decoded_keywords) ? $decoded_keywords : [];
     }
 
-    $meta_keyword = $keywords[0] ?? null;
+    $meta_keyword = sanitize_text_field($keywords[0] ?? '');
 
     $tags = $params['tags'] ?? [];
     if (!is_array($tags)) {
@@ -134,8 +162,8 @@ function super_publisher_post_create_edit($request)
         $tags = is_array($decoded_tags) ? $decoded_tags : [];
     }
 
-    $meta_title = $params['meta_title'] ?? '';
-    $meta_description = $params['meta_description'] ?? '';
+    $meta_title = sanitize_text_field($params['meta_title'] ?? '');
+    $meta_description = sanitize_textarea_field($params['meta_description'] ?? '');
 
     $post_id = $params['id'] ?? 0;
 
@@ -153,25 +181,33 @@ function super_publisher_post_create_edit($request)
         $category_array[] = $category_id;
     }
 
+    $author_id = intval($user ?? get_option('default_author', 0));
+
+    if ($author_id > 0) {
+        if (!user_can($author_id, 'publish_posts')) {
+            return new WP_REST_Response([
+                'error' => 'Provided user ID does not exist or lacks permission to publish posts.'
+            ], 403);
+        }
+    }
+
     $post = [
         'post_title'    => $title,
         'post_content'  => $content,
         'post_status'   => $status,
         'post_type'     => 'post',
         'post_name'     => $slug,
-        'post_author'   => intval($user) ?? intval(get_option('default_author', 0)),
+        'post_author'   => $author_id,
     ];
 
     if ($schedule_date) {
-        $dt = new DateTime($schedule_date, new DateTimeZone('America/Sao_Paulo'));
-
-        $dt_utc = clone $dt;
-        $dt_utc->setTimezone(new DateTimeZone('UTC'));
+        $dt = new DateTime($schedule_date, wp_timezone());
 
         $post['post_date'] = $dt->format('Y-m-d H:i:s');
-        $post['post_date_gmt'] = $dt_utc->format('Y-m-d H:i:s');
+        $post['post_date_gmt'] = get_gmt_from_date($post['post_date']);
         $post['post_status'] = 'future';
     } else {
+
         $post['post_status'] = 'publish';
         $post['post_date'] = current_time('mysql');
         $post['post_date_gmt'] = current_time('mysql', 1);
@@ -239,7 +275,7 @@ function super_publisher_post_create_edit($request)
         $new_content = substituir_imgs_do_conteudo($content, $post_id);
         if ($new_content !== $content) {
             wp_update_post([
-                'id' => $post_id,
+                'ID' => $post_id,
                 'post_content' => $new_content,
             ]);
         }
@@ -259,9 +295,9 @@ function super_publisher_post_create_edit($request)
 
 function super_publisher_post_unpublish($request)
 {
-    $post_id = $request->get_param('id');
+    $post_id = intval($request->get_param('id'));
 
-    if (empty($post_id) || !is_numeric($post_id) || $post_id <= 0) {
+    if ($post_id <= 0) {
         return new WP_REST_Response(['error' => 'invalid id'], 400);
     }
 
@@ -271,8 +307,15 @@ function super_publisher_post_unpublish($request)
         return new WP_REST_Response(['error' => 'post not found'], 404);
     }
 
+    $is_sp_post = get_post_meta($post_id, '_super_publisher_post', true);
+
+    if (!$is_sp_post) {
+
+        return new WP_REST_Response(['error' => 'Permission denied: this post was not created by Super Publisher.'], 403);
+    }
+
     $result = wp_update_post([
-        'id' => $post_id,
+        'ID'          => $post_id,
         'post_status' => 'draft',
     ]);
 
@@ -285,15 +328,25 @@ function super_publisher_post_unpublish($request)
 
 function super_publisher_post_destroy($request)
 {
-    $post_id = $request->get_param('id');
+    $post_id = intval($request->get_param('id'));
 
-    if (empty($post_id) || !is_numeric($post_id) || $post_id <= 0) {
+    if ($post_id <= 0) {
         return new WP_REST_Response(['error' => 'invalid id'], 400);
+    }
+
+    $post = get_post($post_id);
+    if (!$post) {
+        return new WP_REST_Response(['error' => 'post not found'], 404);
+    }
+
+    $is_sp_post = get_post_meta($post_id, '_super_publisher_post', true);
+    if (!$is_sp_post) {
+        return new WP_REST_Response(['error' => 'Permission denied: this post was not created by Super Publisher.'], 403);
     }
 
     $result = wp_delete_post($post_id, true);
 
-    if (is_wp_error($result)) {
+    if (!$result) {
         return new WP_REST_Response(['error' => 'unable to delete post'], 500);
     }
 
@@ -302,29 +355,35 @@ function super_publisher_post_destroy($request)
 
 function super_publisher_post_check($request)
 {
-    $post_id = $request->get_param('id');
+    $post_id = intval($request->get_param('id'));
 
-    if (empty($post_id) || !is_numeric($post_id) || $post_id <= 0) {
+    if ($post_id <= 0) {
         return new WP_REST_Response(['error' => 'invalid id'], 400);
     }
 
-    return new WP_REST_Response(get_post_status($post_id) !== false, 200);
+    $post_exists = (get_post_status($post_id) !== false);
+
+    $is_sp_post = (bool) get_post_meta($post_id, '_super_publisher_post', true);
+
+    $response_data = ($post_exists && $is_sp_post);
+
+    return new WP_REST_Response($response_data, 200);
 }
 
 //USERS
 function super_publisher_user_export()
 {
-    $users = get_users();
+    $users = get_users([
+        'role__in' => ['administrator', 'editor', 'author'],
+        'fields'   => ['ID', 'display_name'],
+    ]);
 
-    $result = [];
-
-    foreach ($users as $user) {
-        $result[] = [
-            'id' => $user->ID,
+    $result = array_map(function ($user) {
+        return [
+            'id'   => $user->ID,
             'name' => $user->display_name,
-            'role' => $user->roles[0] ?? 'no role',
         ];
-    }
+    }, $users);
 
     return new WP_REST_Response(['users' => $result]);
 }
@@ -332,26 +391,34 @@ function super_publisher_user_export()
 //SCHEDULED
 function super_publisher_change_to_published($new_status, $old_status, $post)
 {
-    if ($old_status === 'future' && $new_status === 'publish') {
-
+    if ('future' === $old_status && 'publish' === $new_status) {
         $token = get_option('super_publisher_token');
+        if (empty($token)) {
+            return;
+        }
+
+        $is_sp_post = get_post_meta($post->ID, '_super_publisher_post', true);
+        if (!$is_sp_post) {
+            return;
+        }
+
         $webhook_url = 'https://autoblog.superpublisher.net/api/post/published';
 
-        $response = wp_remote_request($webhook_url, array(
+        $response = wp_remote_request($webhook_url, [
             'method'  => 'PATCH',
-            'headers' => array(
+            'headers' => [
                 'Authorization' => 'Bearer ' . $token,
                 'Content-Type'  => 'application/json',
-            ),
-            'body'    => json_encode(array(
+            ],
+            'body'    => json_encode([
                 'wp_post_id' => $post->ID,
-                'url' => home_url(),
-            )),
+                'url'        => home_url(),
+            ]),
             'timeout' => 15,
-        ));
+        ]);
 
         if (is_wp_error($response)) {
-            error_log('Webhook error: ' . $response->get_error_message());
+            error_log('Super Publisher Webhook error: ' . $response->get_error_message());
         }
     }
 }
@@ -362,15 +429,37 @@ function baixar_e_anexar_imagem($url, $post_id, $alt = '')
     $hash = md5($url);
 
     $query = new WP_Query([
-        'post_type' => 'attachment',
-        'meta_key' => '_remote_image_url_md5',
-        'meta_value' => $hash,
+        'post_type'      => 'attachment',
+        'meta_key'       => '_remote_image_url_md5',
+        'meta_value'     => $hash,
         'posts_per_page' => 1,
-        'fields' => 'ids',
+        'fields'         => 'ids',
     ]);
 
     if (!empty($query->posts)) {
         return $query->posts[0];
+    }
+
+    if (!filter_var($url, FILTER_VALIDATE_URL)) {
+        return new WP_Error('invalid_url', 'A URL fornecida não tem um formato válido.');
+    }
+
+    $path_parts = pathinfo(wp_parse_url($url, PHP_URL_PATH));
+    $extension = strtolower($path_parts['extension'] ?? '');
+    $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+
+    if (!in_array($extension, $allowed_extensions)) {
+        return new WP_Error('invalid_extension', 'A URL não aponta para um tipo de imagem permitido (.jpg, .png, etc).');
+    }
+
+    $head_response = wp_remote_head($url, ['timeout' => 5]);
+    if (is_wp_error($head_response)) {
+        return new WP_Error('head_request_failed', 'Não foi possível verificar a URL remota.');
+    }
+
+    $content_type = wp_remote_retrieve_header($head_response, 'content-type');
+    if (empty($content_type) || strpos($content_type, 'image/') !== 0) {
+        return new WP_Error('invalid_content_type', 'O conteúdo da URL não foi identificado como uma imagem.');
     }
 
     require_once ABSPATH . 'wp-admin/includes/image.php';
@@ -380,11 +469,13 @@ function baixar_e_anexar_imagem($url, $post_id, $alt = '')
     $tmp = download_url($url);
 
     if (is_wp_error($tmp)) {
-        return 0;
+        return $tmp;
     }
 
+    $file_name = sanitize_file_name(wp_basename(wp_parse_url($url, PHP_URL_PATH)));
+
     $file_array = [
-        'name'     => basename($url),
+        'name'     => $file_name,
         'tmp_name' => $tmp,
     ];
 
@@ -392,7 +483,7 @@ function baixar_e_anexar_imagem($url, $post_id, $alt = '')
 
     if (is_wp_error($id)) {
         @unlink($tmp);
-        return 0;
+        return $id;
     }
 
     update_post_meta($id, '_remote_image_url_md5', $hash);

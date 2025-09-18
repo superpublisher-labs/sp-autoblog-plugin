@@ -1,5 +1,9 @@
 <?php
 
+if (! defined('ABSPATH')) {
+    exit;
+}
+
 // admin page
 add_action('admin_menu', function () {
     add_menu_page(
@@ -107,19 +111,28 @@ function super_publisher_admin_page()
                         <select name="author" id="author"
                             class="w-full p-3 border border-gray-300 rounded-lg shadow-sm !block !box-border !text-gray-900 !bg-white !font-normal"
                             style="display: block !important; box-sizing: border-box !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
-                            <option value="">Nenhum</option>
                             <?php
-                                $authors = get_users();
-                                $selected_author = get_option('default_author', '');
+                            $authors = get_users([
+                                'role__in' => ['administrator', 'editor', 'author'],
+                                'fields'   => ['ID', 'display_name'],
+                            ]);
+
+                            if (!empty($authors)) {
+                                $selected_author = get_option('default_author', $authors[0]->ID);
 
                                 foreach ($authors as $user) {
-                                    $selected = ($selected_author == $user->ID) ? 'selected' : '';
-                                    ?>
+                                    $selected = selected($selected_author, $user->ID, false);
+                            ?>
                                     <option value="<?php echo esc_attr($user->ID); ?>" <?php echo $selected; ?>>
                                         <?php echo esc_html($user->display_name); ?>
                                     </option>
-                                    <?php
+                                <?php
                                 }
+                            } else {
+                                ?>
+                                <option value="" disabled>Nenhum autor disponível encontrado.</option>
+                            <?php
+                            }
                             ?>
                         </select>
                         <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
